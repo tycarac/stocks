@@ -8,6 +8,7 @@ custom logging formatters should be added after standard Logging formatters.
 """
 # from logging import LogRecord, Formatter, FileHandler, getLogger
 import logging
+import logging.config
 from os import environ, PathLike
 from pathlib import Path
 from sys import exc_info, stdout
@@ -16,7 +17,7 @@ _logger = logging.getLogger(__name__)
 
 
 # _____________________________________________________________________________
-def initialize_logger(logger_dp: PathLike, main_basename: str):
+def initialize_logger(logger_dp: PathLike, log_basename: str):
     Path(logger_dp).mkdir(parents=True, exist_ok=True)
 
     brief_formatter = logging.Formatter(fmt='%(levelname)-6s %(msg)s')
@@ -25,24 +26,28 @@ def initialize_logger(logger_dp: PathLike, main_basename: str):
     console_handler = logging.StreamHandler(stdout)
     console_handler.setFormatter(brief_formatter)
     console_handler.setLevel(logging.INFO)
+    console_handler.addFilter(lambda r: not r.name.startswith('urllib'))
 
-    output_fp = Path(logger_dp, main_basename).with_suffix('.log')
+    output_fp = Path(logger_dp, log_basename).with_suffix('.log')
     output_handler = PathFileHandler(output_fp, mode='w')
     output_handler.setFormatter(context_formatter)
     output_handler.setLevel(logging.INFO)
+    console_handler.addFilter(lambda r: not r.name.startswith('urllib'))
 
-    debug_fp = Path(logger_dp, main_basename).with_suffix('.debug.log')
+    debug_fp = Path(logger_dp, log_basename).with_suffix('.debug.log')
     debug_handler = PathFileHandler(debug_fp, mode='w')
     debug_handler.setFormatter(context_formatter)
     debug_handler.setLevel(logging.DEBUG)
 
     root = logging.getLogger()
+    root.propagate = False
     root.setLevel(environ.get('LOGLEVEL', logging.DEBUG))
     root.addHandler(output_handler)
     root.addHandler(debug_handler)
     root.addHandler(console_handler)
 
     logging.captureWarnings(True)
+    _logger.debug(f'initialize_logger "{log_basename}" "{logger_dp}"')
 
 
 # _____________________________________________________________________________
