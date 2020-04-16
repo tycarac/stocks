@@ -1,0 +1,6 @@
+beautifulsoup4
+lxml
+pytz
+tzlocal
+urllib3
+python-dateutil

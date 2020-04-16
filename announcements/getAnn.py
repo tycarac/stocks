@@ -1,0 +1,76 @@
+import argparse
+from datetime import datetime
+import logging
+from pathlib import Path
+from typing import Dict, Sequence, Iterable, List
+
+from common.common import local_tz
+from common.logTools import initialize_logger
+
+import announcements.annTypes as typ
+import announcements.annConfig as config
+import announcements.annLoader as loader
+import announcements.scrapeAnn as scrape
+import announcements.fetchAnn as fetch
+import announcements.annOutput as output
+
+_logger = logging.getLogger(__name__)
+
+
+# _____________________________________________________________________________
+def load_symbols(symbols_fp: Path) -> loader.ValuesLoader:
+    _logger.debug(f'Loading symbols from "{symbols_fp}"')
+    return loader.ValuesLoader(symbols_fp)
+
+
+# _____________________________________________________________________________
+def process_symbols(symbols: List[str], app_config: config.AppConfig) -> List[typ.Announcement]:
+    _logger.debug('process_symbols')
+
+    # Scrape list of announcements
+    scraper = scrape.AnnPageScraper(app_config)
+    announcements = scraper.get_announcements(symbols)
+
+    # Fetch announcements
+    fetcher = fetch.FetchFile(app_config)
+    fetcher.process(announcements)
+
+    return announcements
+
+
+# _____________________________________________________________________________
+def main():
+    main_basename = Path(__file__).stem
+    basepath = Path(__file__).parent
+    logger_dp = Path(Path(__file__).parent, 'logs')
+    initialize_logger(logger_dp, main_basename)
+    start_datetime = datetime.now(tz=local_tz)
+    _logger.info(f'Now: {start_datetime.strftime("%a  %d-%b-%y  %I:%M:%S %p")}')
+
+    # Configure commandline parser
+    argp = argparse.ArgumentParser(description='Retrieve stock prices from Yahoo Finance website')
+    argp.add_argument('-s', '--symbols', action='store_true', help='Output symbols to be processed and exit')
+    argp.add_argument('-f', '--file', action='store', nargs=1, default=['symbols.csv'],
+                help='Input file name for symbols')
+
+    try:
+        args = argp.parse_args()
+        app_config = config.AppConfig(basepath)
+
+        values = load_symbols(Path(Path(__file__).parent, args.file[0]))  # Expecting exactly 1 filename in list
+        if args.symbols and values:
+            output.output_symbols(values)
+            return
+
+        announcements = process_symbols(values.symbols, app_config)
+        output.write_report(announcements)
+
+    except Exception as ex:
+        _logger.exception('Catch all exception')
+    finally:
+        _logger.debug("done")
+
+
+# _____________________________________________________________________________
+if __name__ == '__main__':
+    main()
