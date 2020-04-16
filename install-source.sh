@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPO_NAME="stock-prices"
+REPO_NAME="stocks"
 CWD=${PWD##*/}
 
 set -e

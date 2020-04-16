@@ -2,4 +2,4 @@
 setlocal
 
 call .venv\scripts\activate
-python fetch.py %*
+python getann.py %*
