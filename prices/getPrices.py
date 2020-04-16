@@ -101,10 +101,10 @@ def process_data(recs: List[common.Record], values: loader.ValuesLoader) -> List
 
 # _____________________________________________________________________________
 def main():
-    main_basename = Path(__file__).stem
-    logger_dp = Path(Path(__file__).parent, 'logs')
-    initialize_logger(logger_dp, main_basename)
     start_datetime = datetime.now(tz=local_tz)
+    current_dp = Path(__file__).parent
+    base_dp = current_dp.parent
+    initialize_logger(Path(base_dp, 'logs'), current_dp.stem)
     _logger.info(f'Now: {start_datetime.strftime("%a  %d-%b-%y  %I:%M:%S %p")}')
 
     # Configure commandline parser

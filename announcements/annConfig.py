@@ -15,19 +15,19 @@ today = datetime.now(local_tz)
 class AppConfig:
 
     # _____________________________________________________________________________
-    def __init__(self, main_path: Path):
+    def __init__(self, base_dp: Path):
         """Initialises the configuration class
         """
 
         # Initialize
-        self._name = main_path.stem
+        self._name = base_dp.stem
 
         # Cache
-        self._cache_path = Path(main_path, 'cache').resolve()
+        self._cache_path = Path(base_dp, 'cache').resolve()
         self._cache_age_sec = 600
 
         # Output
-        self._output_path = Path(main_path, 'output').resolve()
+        self._output_path = Path(base_dp, 'output').resolve()
 
     # _____________________________________________________________________________
     @property

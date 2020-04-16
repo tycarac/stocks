@@ -1,3 +1,4 @@
+from collections import Counter
 import csv
 from decimal import Decimal, getcontext, InvalidOperation
 from io import StringIO
@@ -11,7 +12,7 @@ from common.common import multisort, today
 from common.metricPrefix import to_decimal_units
 
 from announcements.annLoader import ValuesLoader
-from announcements.annTypes import Announcement
+from announcements.annTypes import Announcement, Result, Outcome
 
 _logger = logging.getLogger(__name__)
 
@@ -61,6 +62,28 @@ def output_symbols(values: ValuesLoader):
         buf.write(f'\n {"symbol":^6s}\n')
         for s in values.symbols:
             buf.write(f' {_outsym(s)}\n')
+        print(buf.getvalue())
+
+
+# _____________________________________________________________________________
+def output_summary(recs: List[Announcement]):
+    _logger.debug('build_summary')
+
+    counter_outcome = Counter(map(lambda r: r.outcome, recs))
+    counter_result = Counter(map(lambda r: r.result, recs))
+
+    with StringIO() as buf:
+        buf.write('Records:    %5d\n' % len(recs))
+        buf.write('- Cached:   %5d\n' % counter_outcome[Outcome.cached])
+        buf.write('- Created:  %5d\n' % counter_outcome[Outcome.created])
+        # buf.write('- Updated:  %5d\n' % counter_outcome[Outcome.updated])
+        buf.write('- Nil:      %5d\n' % counter_outcome[Outcome.nil])
+        buf.write('  Archived: %5d\n' % counter_outcome[Outcome.archived])
+        buf.write('  Deleted:  %5d\n' % counter_outcome[Outcome.deleted])
+        buf.write('Results\n')
+        buf.write('- Warnings: %5d\n' % counter_result[Result.warning])
+        buf.write('- Errors:   %5d\n' % counter_result[Result.error])
+        buf.write('- Nil:      %5d\n' % counter_result[Result.nil])
         print(buf.getvalue())
 
 

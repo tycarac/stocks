@@ -2,7 +2,7 @@ import argparse
 from datetime import datetime
 import logging
 from pathlib import Path
-from typing import Dict, Sequence, Iterable, List
+from typing import List
 
 from common.common import local_tz
 from common.logTools import initialize_logger
@@ -40,11 +40,10 @@ def process_symbols(symbols: List[str], app_config: config.AppConfig) -> List[ty
 
 # _____________________________________________________________________________
 def main():
-    main_basename = Path(__file__).stem
-    basepath = Path(__file__).parent
-    logger_dp = Path(Path(__file__).parent, 'logs')
-    initialize_logger(logger_dp, main_basename)
     start_datetime = datetime.now(tz=local_tz)
+    current_dp = Path(__file__).parent
+    base_dp = current_dp.parent
+    initialize_logger(Path(base_dp, 'logs'), current_dp.stem)
     _logger.info(f'Now: {start_datetime.strftime("%a  %d-%b-%y  %I:%M:%S %p")}')
 
     # Configure commandline parser
@@ -55,15 +54,16 @@ def main():
 
     try:
         args = argp.parse_args()
-        app_config = config.AppConfig(basepath)
+        app_config = config.AppConfig(base_dp)
 
-        values = load_symbols(Path(Path(__file__).parent, args.file[0]))  # Expecting exactly 1 filename in list
+        values = load_symbols(Path(current_dp, args.file[0]))  # Expecting exactly 1 filename in list
         if args.symbols and values:
             output.output_symbols(values)
             return
 
         announcements = process_symbols(values.symbols, app_config)
         output.write_report(announcements)
+        output.output_summary(announcements)
 
     except Exception as ex:
         _logger.exception('Catch all exception')

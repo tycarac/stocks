@@ -2,4 +2,4 @@
 setlocal
 
 call .venv\scripts\activate
-python.exe announcements %*
+python.exe prices %*
