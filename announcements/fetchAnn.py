@@ -33,7 +33,7 @@ class FetchFile:
     def __fetch_announcements(self, anns: List[typ.Announcement]):
         _logger.debug('__fetch_announcements')
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
             future_entry = {executor.submit(self.__fetch_announcement, ann, id) for id, ann in enumerate(anns)}
             for future in concurrent.futures.as_completed(future_entry):
                 ann, id = future.result()
@@ -70,7 +70,7 @@ class FetchFile:
         try:
             url = urllib.parse.urljoin(_URL, ann.href)
             rel_path = ann.filepath.relative_to(self._app_config.output_path)
-            _logger.debug(f'> {id:4d} fetching:   "{rel_path.name}" --> "{rel_path.parent}"')
+            _logger.info(f'> {id:4d} fetching:   {ann.symbol:6s} "{rel_path.name}"')
 
             rsp = None
             try:
