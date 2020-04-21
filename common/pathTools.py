@@ -1,12 +1,12 @@
+from datetime import timedelta, date, datetime, time
 import io
 import os
 from pathlib import Path
 import string
-from typing import Tuple
+from typing import List, Tuple
 import unicodedata
 from urllib import parse
 import zipfile
-
 
 # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
 _FOLDER_SEPARATOR_CHARS = ['\\', '/']
@@ -20,7 +20,20 @@ _SPACE_CHARS = ['\u00A0', '\u2002', '\u2003']  # Does not include HTML specializ
 
 
 # _____________________________________________________________________________
-def is_parent(parent: Path, path: Path):
+def file_suffix(fp: str) -> str:
+    """Extract the file suffix from a path
+
+    :param fp:
+    :return: file suffix or empty string
+    """
+    loc = max(fp.rfind('\\'), fp.rfind('/')) + 1
+    if (pos := fp.rfind('.', loc)) > 0 and fp[loc] != '.':
+        return fp[pos:]
+    return ''
+
+
+# _____________________________________________________________________________
+def is_parent(parent: Path, path: Path) -> bool:
     """Returns True is path has the same parent path as parent
     :param parent:
     :param path:
@@ -30,25 +43,61 @@ def is_parent(parent: Path, path: Path):
 
 
 # _____________________________________________________________________________
-def delete_empty_directories(root: os.PathLike):
+def delete_empty_directories(path: os.PathLike) -> List[str]:
     """Deletes all empty child folders under a parent folder
-    :param root: parent folder
+    :param path:
     :return: List of deleted folders
     """
     deleted_folders = []
-    for root, dirs, _ in os.walk(str(root), topdown=False):
-        for dir in dirs:
-            loc = os.path.join(root, dir)
-            with os.scandir(loc) as it:
+    for parent, dirs, _ in os.walk(str(path), topdown=False):
+        for dir in [os.path.join(parent, d) for d in dirs]:
+            with os.scandir(dir) as it:
                 if next(it, None) is None:
-                    deleted_folders.append(loc)
-                    os.rmdir(loc)
+                    try:
+                        os.rmdir(dir)
+                        deleted_folders.append(dir)
+                    except PermissionError:
+                        pass
 
     return deleted_folders
 
 
 # _____________________________________________________________________________
-def sanitize_filename(filename: str, replace_dot=False):
+def delete_empty_old_files(path: os.PathLike, age: timedelta = None) -> (List[str], List[str]):
+    """Deletes all empty child folders under a parent folder
+    :param path: parent folder
+    :param age:
+    :param include_empty:
+    :return: Tuple of deleted files, deleted folders and errors
+    """
+    cutoff = (datetime.now() - age).replace(hour=0, minute=0, second=0).timestamp() if age else None
+
+    deleted_folders, deleted_files, errors = [], [], []
+    for parent, dirs, files in os.walk(str(path), topdown=False):
+        # Delete empty and old files
+        for file in [os.path.join(parent, f) for f in files]:
+            if (cutoff and os.path.getmtime(file) < cutoff) or os.path.getsize(file) == 0:
+                try:
+                    os.remove(file)
+                    deleted_files.append(file)
+                except PermissionError:
+                    errors.append(file)
+
+        # Delete empty directories
+        for dir in [os.path.join(parent, d) for d in dirs]:
+            with os.scandir(dir) as it:
+                if next(it, None) is None:
+                    try:
+                        os.rmdir(dir)
+                        deleted_folders.append(dir)
+                    except PermissionError:
+                        errors.append(dir)
+
+    return deleted_files, deleted_folders, errors
+
+
+# _____________________________________________________________________________
+def sanitize_filename(filename: str, replace_dot=False) -> str:
     """Returns MS-Windows sanitized filename using ASCII character set
     :param filename: string
     :param replace_dot: bool
@@ -74,7 +123,7 @@ def sanitize_filename(filename: str, replace_dot=False):
 
 
 # _____________________________________________________________________________
-def join_urlpath(url, *paths: str):
+def join_urlpath(url, *paths: str) -> str:
     """Returns URL by combining url with each of the arguments in turn
     :param url: base URL
     :param paths: paths to be added
@@ -88,7 +137,7 @@ def join_urlpath(url, *paths: str):
 
 
 # _____________________________________________________________________________
-def urlpath_to_pathname(url: str):
+def urlpath_to_pathname(url: str) -> str:
     """Returns MS-Windows sanitized filepath from a URL
     :param url: string
     :return: sanitized filename
@@ -113,7 +162,7 @@ def urlpath_to_pathname(url: str):
 
 
 # _____________________________________________________________________________
-def url_suffix(url: str):
+def url_suffix(url: str) -> str:
     """
     The final component's last suffix, if any.  Includes leading period (eg: .'html').
 
@@ -150,15 +199,3 @@ def open_files(path: str or os.PathLike) -> Tuple[str, int]:
                 # Yield non-archive file
                 with open(path) as file_handle:
                     yield rel_path_str, file_handle
-
-
-# _____________________________________________________________________________
-def file_suffix(fp: str):
-    """Extract the file suffix from a path
-    :param filepath:
-    :return: file suffix or empty string
-    """
-    loc = max(fp.rfind('\\'), fp.rfind('/')) + 1
-    if (pos := fp.rfind('.', loc)) > 0 and fp[loc] != '.':
-        return fp[pos:]
-    return ''

@@ -1,9 +1,11 @@
 from bs4 import BeautifulSoup
 from dateutil.parser import parse
 import logging
+from operator import itemgetter, attrgetter
 from typing import List, Dict
 import urllib.parse
 
+from common.common import sleep
 from common.urlCache import UrlCache
 from announcements.annTypes import Announcement, Outcome, Result
 from announcements.annConfig import AppConfig
@@ -86,8 +88,16 @@ class AnnPageScraper:
         for symbol in symbols:
             url, fields = self.__build_url(symbol)
             data, suffix, is_cached = url_cache.get(url, fields=fields, cache_tag=f'{symbol.lower()}-webpage.html')
+            if data is None:
+                _logger.error(f'Could not fetch data for {symbol}')
+                continue
+
             lst = self.__extract_announcements(symbol, data)
             announcements.extend(lst)
-            _logger.debug(f'symbol: {symbol}, is_cached {is_cached}, num announcements {len(lst)}')
+
+            rec = max(lst, key=attrgetter('date_time'))
+            _logger.info(f'symbol: {symbol:6s} most recent {rec.date_time}, found {len(lst)}')
+            if not is_cached:
+                sleep(0.7, 0.2)
 
         return announcements

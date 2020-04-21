@@ -13,6 +13,7 @@ import announcements.annLoader as loader
 import announcements.scrapeAnn as scrape
 import announcements.fetchAnn as fetch
 import announcements.annOutput as output
+import announcements.annCleanup as cleanup
 
 _logger = logging.getLogger(__name__)
 
@@ -39,6 +40,14 @@ def process_symbols(symbols: List[str], app_config: config.AppConfig) -> List[ty
 
 
 # _____________________________________________________________________________
+def process_cleanup(app_config: config.AppConfig) -> List[typ.DeleteRecord]:
+    _logger.debug('process_cleanup')
+
+    clean = cleanup.CleanOutput(app_config)
+    return clean.process()
+
+
+# _____________________________________________________________________________
 def main():
     start_datetime = datetime.now(tz=local_tz)
     current_dp = Path(__file__).parent
@@ -62,6 +71,7 @@ def main():
             return
 
         announcements = process_symbols(values.symbols, app_config)
+
         output.write_report(announcements)
         output.output_summary(announcements)
 

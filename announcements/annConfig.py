@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging.handlers
 from pathlib import Path
 import pytz
@@ -24,10 +24,12 @@ class AppConfig:
 
         # Cache
         self._cache_path = Path(base_dp, 'cache').resolve()
-        self._cache_age_sec = 600
+        self._cache_age_sec = 900
 
         # Output
         self._output_path = Path(base_dp, 'output').resolve()
+
+        self._announcement_age_days = timedelta(days=35)
 
     # _____________________________________________________________________________
     @property
@@ -48,3 +50,8 @@ class AppConfig:
     @property
     def output_path(self):
         return self._output_path
+
+    # _____________________________________________________________________________
+    @property
+    def announcement_age_days(self):
+        return self._announcement_age_days

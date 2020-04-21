@@ -43,3 +43,15 @@ class Announcement:
     file_type: str
     outcome: Outcome
     result: Result
+
+
+# _____________________________________________________________________________
+@dataclass
+class DeleteRecord:
+    __slots__ = ['symbol', 'file_date', 'filename', 'filepath', 'outcome', 'result']
+    symbol: str
+    file_date: date
+    filename: str
+    filepath: Path
+    outcome: Outcome
+    result: Result
