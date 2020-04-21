@@ -1,6 +1,9 @@
 from datetime import datetime, date, time
 import logging
+import random
+import uuid
 import re
+import time
 from typing import List, Any, Tuple
 import tzlocal
 import urllib3
@@ -10,6 +13,7 @@ _logger = logging.getLogger(__name__)
 local_tz = tzlocal.get_localzone()
 today = datetime.now(local_tz)
 
+ran = random.Random(uuid.uuid4().hex)
 re_yahoo_symbol = re.compile(r'([A-Z0-9]{2,6})(?:\.AX)?', re.IGNORECASE)
 
 
@@ -26,3 +30,7 @@ def multisort(coll: List, specs):
         coll.sort(key=key, reverse=reverse)
     return coll
 
+
+# _____________________________________________________________________________
+def sleep(value: float, min_value: float = 0):
+    time.sleep(ran.uniform(min_value, value))

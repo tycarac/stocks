@@ -6,7 +6,6 @@ formating and caching.  Subsequent calls to logging handlers use the same cached
 string is stored in LogRecord record.exec_text and must be cleared if a different exception format is required.  Thus
 custom logging formatters should be added after standard Logging formatters.
 """
-# from logging import LogRecord, Formatter, FileHandler, getLogger
 import logging
 import logging.config
 from os import environ, PathLike
@@ -20,11 +19,11 @@ _logger = logging.getLogger(__name__)
 def initialize_logger(logger_dp: PathLike, log_basename: str):
     Path(logger_dp).mkdir(parents=True, exist_ok=True)
 
-    brief_formatter = logging.Formatter(fmt='%(levelname)-6s %(msg)s')
+    console_formatter = logging.Formatter(fmt='%(msg)s')
     context_formatter = logging.Formatter(fmt='%(levelname)-6s %(msg)s')
 
     console_handler = logging.StreamHandler(stdout)
-    console_handler.setFormatter(brief_formatter)
+    console_handler.setFormatter(console_formatter)
     console_handler.setLevel(logging.INFO)
     console_handler.addFilter(lambda r: not r.name.startswith('urllib'))
 
