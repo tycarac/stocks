@@ -98,6 +98,6 @@ class AnnPageScraper:
             rec = max(lst, key=attrgetter('date_time'))
             _logger.info(f'symbol: {symbol:6s} most recent {rec.date_time}, found {len(lst)}')
             if not is_cached:
-                sleep(0.7, 0.2)
+                sleep(0.5, 0.5)
 
         return announcements

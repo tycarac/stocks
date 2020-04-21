@@ -47,7 +47,7 @@ class Announcement:
 
 # _____________________________________________________________________________
 @dataclass
-class DeleteRecord:
+class Deleted:
     __slots__ = ['symbol', 'file_date', 'filename', 'filepath', 'outcome', 'result']
     symbol: str
     file_date: date

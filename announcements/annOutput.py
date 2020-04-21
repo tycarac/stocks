@@ -12,7 +12,7 @@ from common.common import multisort, today
 from common.metricPrefix import to_decimal_units
 
 from announcements.annLoader import ValuesLoader
-from announcements.annTypes import Announcement, Result, Outcome
+from announcements.annTypes import Announcement, Deleted, Result, Outcome
 
 _logger = logging.getLogger(__name__)
 
@@ -66,11 +66,13 @@ def output_symbols(values: ValuesLoader):
 
 
 # _____________________________________________________________________________
-def output_summary(recs: List[Announcement]):
+def output_summary(recs: List[Announcement], deleted: List[Deleted]):
     _logger.debug('build_summary')
 
     counter_outcome = Counter(map(lambda r: r.outcome, recs))
+    counter_outcome += Counter(map(lambda r: r.outcome, deleted))
     counter_result = Counter(map(lambda r: r.result, recs))
+    counter_result += Counter(map(lambda r: r.result, deleted))
 
     with StringIO() as buf:
         buf.write('\nRecords:    %5d\n' % len(recs))
@@ -85,7 +87,7 @@ def output_summary(recs: List[Announcement]):
 
 
 # _____________________________________________________________________________
-def write_report(recs: List[Announcement]):
+def write_report(recs: List[Announcement], deleted: List[Deleted]):
     report_fp = Path(_output_base_path, 'report.csv').resolve()
     _logger.debug(f'write_report "{report_fp.name}"')
 

@@ -11,7 +11,7 @@ import announcements.annTypes as typ
 import announcements.annConfig as config
 import announcements.annLoader as loader
 import announcements.scrapeAnn as scrape
-import announcements.fetchAnn as fetch
+import announcements.annFetch as fetch
 import announcements.annOutput as output
 import announcements.annCleanup as cleanup
 
@@ -40,7 +40,7 @@ def process_symbols(symbols: List[str], app_config: config.AppConfig) -> List[ty
 
 
 # _____________________________________________________________________________
-def process_cleanup(app_config: config.AppConfig) -> List[typ.DeleteRecord]:
+def process_cleanup(app_config: config.AppConfig) -> List[typ.Deleted]:
     _logger.debug('process_cleanup')
 
     clean = cleanup.CleanOutput(app_config)
@@ -71,9 +71,10 @@ def main():
             return
 
         announcements = process_symbols(values.symbols, app_config)
+        deleted = process_cleanup(app_config)
 
-        output.write_report(announcements)
-        output.output_summary(announcements)
+        output.write_report(announcements, deleted)
+        output.output_summary(announcements, deleted)
 
     except Exception as ex:
         _logger.exception('Catch all exception')

@@ -20,7 +20,7 @@ class CleanOutput:
 
     # _____________________________________________________________________________
     @staticmethod
-    def __delete_old_empty_files(path: os.PathLike, age: timedelta) -> List[typ.DeleteRecord]:
+    def __delete_old_empty_files(path: os.PathLike, age: timedelta) -> List[typ.Deleted]:
         cutoff = (datetime.now() - age).replace(hour=0, minute=0, second=0).timestamp() if age else None
 
         delete_records = []
@@ -32,14 +32,14 @@ class CleanOutput:
                     try:
                         os.remove(file)
                         result = typ.Result.success
-                        _logger.debug(f'Deleted file "{path}"')
+                        _logger.debug(f'Deleted file "{file}"')
                     except PermissionError:
-                        _logger.warning(f'Cannot delete file "{path}"')
+                        _logger.warning(f'Cannot delete file "{file}"')
                     finally:
                         symbol = os.path.basename(os.path.dirname(path))
                         file_date_time = datetime.fromtimestamp(mtime, config.asx_tz)
-                        delete_records.append(typ.DeleteRecord(symbol, file_date_time, os.path.basename(path),
-                                    Path(path), typ.Outcome.deleted, result))
+                        delete_records.append(typ.Deleted(symbol, file_date_time, os.path.basename(file),
+                                    Path(file), typ.Outcome.deleted, result))
 
             # Delete empty directories
             for dir in [os.path.join(parent, d) for d in dirs]:
@@ -54,7 +54,7 @@ class CleanOutput:
         return delete_records
 
     # _____________________________________________________________________________
-    def process(self) -> List[typ.DeleteRecord]:
+    def process(self) -> List[typ.Deleted]:
         _logger.debug('process')
 
-        return self.__delete_old_empty_files(self._app_config.output_path)
+        return self.__delete_old_empty_files(self._app_config.output_path, self._app_config.announcement_age_days)
