@@ -14,6 +14,7 @@ local_tz = tzlocal.get_localzone()
 today = datetime.now(local_tz)
 
 ran = random.Random(uuid.uuid4().hex)
+re_asx_shares_symbol = re.compile(r'([A-Z0-9]{3,3})', re.IGNORECASE)
 re_yahoo_symbol = re.compile(r'([A-Z0-9]{2,6})(?:\.AX)?', re.IGNORECASE)
 
 

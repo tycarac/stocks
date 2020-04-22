@@ -19,18 +19,19 @@ _logger = logging.getLogger(__name__)
 
 
 # _____________________________________________________________________________
-def load_symbols(symbols_fp: Path) -> loader.ValuesLoader:
+def load_symbols(symbols_fp: Path) -> List[typ.SharesAnnouncement]:
     _logger.debug(f'Loading symbols from "{symbols_fp}"')
-    return loader.ValuesLoader(symbols_fp)
+    values_loader = loader.ValuesLoader(symbols_fp)
+    return values_loader.share_codes
 
 
 # _____________________________________________________________________________
-def process_symbols(symbols: List[str], app_config: config.AppConfig) -> List[typ.Announcement]:
+def process_symbols(share_codes: List[typ.SharesAnnouncement], app_config: config.AppConfig) -> List[typ.Announcement]:
     _logger.debug('process_symbols')
 
     # Scrape list of announcements
     scraper = scrape.AnnPageScraper(app_config)
-    announcements = scraper.get_announcements(symbols)
+    announcements = scraper.get_announcements(share_codes)
 
     # Fetch announcements
     fetcher = fetch.FetchFile(app_config)
@@ -65,17 +66,17 @@ def main():
         args = argp.parse_args()
         app_config = config.AppConfig(base_dp)
 
-        values = load_symbols(Path(current_dp, args.file[0]))  # Expecting exactly 1 filename in list
-        if args.symbols and values:
-            output.output_symbols(values)
+        share_codes = load_symbols(Path(current_dp, args.file[0]))  # Expecting exactly 1 filename in list
+        if args.symbols and share_codes:
+            output.output_symbols(share_codes)
             return
 
-        announcements = process_symbols(values.symbols, app_config)
+        announcements = process_symbols(share_codes, app_config)
         deleted = process_cleanup(app_config)
 
+        output.output_shares_announcements(share_codes)
+        output.output_announcements_summary(announcements, deleted)
         output.write_report(announcements, deleted)
-        output.output_summary(announcements, deleted)
-
     except Exception as ex:
         _logger.exception('Catch all exception')
     finally:

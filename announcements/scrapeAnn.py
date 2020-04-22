@@ -7,7 +7,7 @@ import urllib.parse
 
 from common.common import sleep
 from common.urlCache import UrlCache
-from announcements.annTypes import Announcement, Outcome, Result
+from announcements.annTypes import Announcement, SharesAnnouncement, Outcome, Result
 from announcements.annConfig import AppConfig
 
 _logger = logging.getLogger(__name__)
@@ -38,14 +38,17 @@ class AnnPageScraper:
 
     # _____________________________________________________________________________
     @staticmethod
-    def __extract_announcements(symbol: str, data: BeautifulSoup) -> List[Announcement]:
+    def __extract_announcements(shares_ann: SharesAnnouncement, data: BeautifulSoup) -> List[Announcement]:
         _logger.debug('__extract_announcements')
 
-        announcements = []
+        # Find data
+        if (data_tag := data.find('announcement_data')) is None:
+            _logger.error(f'Error parsing announcements for {shares_ann.symbol}')
+            return []
+        rows = data_tag.find('table').find('tbody').find_all('tr')
 
-        table = data.find('announcement_data').find('table')
-        table_body = table.find('tbody')
-        rows = table_body.find_all('tr')
+        # Extract data
+        announcements = []
         for row in rows:
             num_pages, file_size, file_type = None, None, None
 
@@ -70,14 +73,14 @@ class AnnPageScraper:
             if (display := params.get('display', None)) and len(display):
                 file_type = display[0]
 
-            ann = Announcement(symbol, date_time, title, is_price_sensitive, num_pages, file_size, href,
-                        None, file_type, Outcome.nil, Result.nil)
+            ann = Announcement(shares_ann.symbol, date_time, title, is_price_sensitive,
+                        num_pages, file_size, href, None, file_type, Outcome.nil, Result.nil)
             announcements.append(ann)
 
         return announcements
 
     # _____________________________________________________________________________
-    def get_announcements(self, symbols: List[str]) -> List[Announcement]:
+    def get_announcements(self, shares_anns: List[SharesAnnouncement]) -> List[Announcement]:
         _logger.debug('get_announcements')
 
         # Initialise cache
@@ -85,19 +88,26 @@ class AnnPageScraper:
 
         # Fetch Service landing page xml
         announcements = []
-        for symbol in symbols:
+        for shares_ann in shares_anns:
+            symbol = shares_ann.symbol
+            _logger.debug(f'Getting announcements for {symbol}')
             url, fields = self.__build_url(symbol)
-            data, suffix, is_cached = url_cache.get(url, fields=fields, cache_tag=f'{symbol.lower()}-webpage.html')
+            cache_tag = f'{symbol.lower()}-webpage.html'
+            data, suffix, is_cached = url_cache.get(url, fields, cache_tag)
             if data is None:
-                _logger.error(f'Could not fetch data for {symbol}')
+                _logger.error(f'Could not fetch data for {shares_ann}')
                 continue
 
-            lst = self.__extract_announcements(symbol, data)
-            announcements.extend(lst)
+            if lst := self.__extract_announcements(shares_ann, data):
+                announcements.extend(lst)
+                rec = max(lst, key=attrgetter('date_time'))
+                shares_ann.most_recent = rec.date_time
+                shares_ann.count = len(lst)
+                _logger.debug(f'symbol: {symbol:6s} most recent {rec.date_time}, found {len(lst)}')
+            else:
+                _logger.debug(f'symbol: {symbol:6s} has no announcements')
 
-            rec = max(lst, key=attrgetter('date_time'))
-            _logger.info(f'symbol: {symbol:6s} most recent {rec.date_time}, found {len(lst)}')
             if not is_cached:
-                sleep(0.5, 0.5)
+                sleep(0.1, 0.2)
 
         return announcements

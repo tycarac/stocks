@@ -75,7 +75,7 @@ class FetchFile:
             rsp = None
             try:
                 _logger.debug(f'> {id:4d} GET:        {url}')
-                sleep(0.1, 0.4)
+                sleep(0.05, 0.2)
                 rsp = url_client.request('GET', url)
                 _logger.debug(f'> {id:4d} GET status:  {rsp.status}')
                 if rsp.status == 200 and ((content_type := rsp.headers.get('Content-Type', ''))
@@ -88,7 +88,7 @@ class FetchFile:
                     fields = {'pdfURL': href}
                     _logger.debug(f'> {id:4d} POST:       {url}')
 
-                    sleep(0.1, 0.2)
+                    sleep(0.05, 0.2)
                     rsp = url_client.request('POST', url, headers=headers, fields=fields, encode_multipart=False)
                     _logger.debug(f'> {id:4d} POST status:  {rsp.status}')
                 if rsp.status == 200 and ((content_type := rsp.headers.get('Content-Type', ''))

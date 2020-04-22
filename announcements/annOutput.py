@@ -2,16 +2,15 @@ from collections import Counter
 import csv
 from decimal import Decimal, getcontext, InvalidOperation
 from io import StringIO
-import json
 import logging
 import os
 from pathlib import Path
-from typing import Union, Sequence, List
+from typing import List
 
 from common.common import multisort, today
 from common.metricPrefix import to_decimal_units
 
-from announcements.annLoader import ValuesLoader
+from announcements.annLoader import SharesAnnouncement
 from announcements.annTypes import Announcement, Deleted, Result, Outcome
 
 _logger = logging.getLogger(__name__)
@@ -55,19 +54,33 @@ def _outs(s: str):
 
 
 # _____________________________________________________________________________
-def output_symbols(values: ValuesLoader):
+def output_symbols(share_codes: List[SharesAnnouncement]):
     _logger.debug('output_symbols')
 
     with StringIO() as buf:
         buf.write(f'\n {"symbol":^6s}\n')
-        for s in values.symbols:
-            buf.write(f' {_outsym(s)}\n')
+        for s in share_codes:
+            buf.write(f' {_outsym(s.symbol)}\n')
         print(buf.getvalue())
 
 
 # _____________________________________________________________________________
-def output_summary(recs: List[Announcement], deleted: List[Deleted]):
-    _logger.debug('build_summary')
+def output_shares_announcements(share_codes: List[SharesAnnouncement]):
+    _logger.debug('output_shares_announcements')
+
+    recs = sorted(share_codes, key=lambda x: x.most_recent, reverse=True)
+    with StringIO() as buf:
+        buf.write(f'\n {"symbol":^6s}  |  {"most recent":^24s}  |  {"count":^5s}\n')
+
+        for r in recs:
+            date_time = r.most_recent.strftime('%a  %d-%b-%y  %I:%M %p')
+            buf.write(f' {_outsym(r.symbol)}  |  {date_time}  |  {r.count:5d}\n')
+        print(buf.getvalue())
+
+
+# _____________________________________________________________________________
+def output_announcements_summary(recs: List[Announcement], deleted: List[Deleted]):
+    _logger.debug('output_announcements_summary')
 
     counter_outcome = Counter(map(lambda r: r.outcome, recs))
     counter_outcome += Counter(map(lambda r: r.outcome, deleted))

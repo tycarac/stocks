@@ -1,9 +1,11 @@
 import csv
 import logging
 from pathlib import Path
-from typing import Set, List
+from typing import List
 
-from common.common import re_yahoo_symbol
+from common.common import re_asx_shares_symbol
+
+from announcements.annTypes import SharesAnnouncement
 
 _logger = logging.getLogger(__name__)
 
@@ -20,21 +22,25 @@ class ValuesLoader:
 
     # _____________________________________________________________________________
     @property
-    def symbols(self) -> List[str]:
+    def share_codes(self) -> List[SharesAnnouncement]:
         return self._symbols
 
     # _____________________________________________________________________________
     def __read(self):
+        def strip_csv(iterator):
+            for ln in iterator:
+                if (ln := ln.strip()) and ln[0] != '#':
+                    yield ln
+
         with self._symbols_fp.open(mode='r', newline='') as fp:
-            csv_reader = csv.reader(filter(lambda r: r.strip() and r[0] != '#', fp), quoting=csv.QUOTE_MINIMAL)
+            csv_reader = csv.reader(strip_csv(fp), quoting=csv.QUOTE_MINIMAL)
             next(csv_reader, None)  # skip csv header
 
             for line in csv_reader:
-                if line and (symbol := line[0].strip().upper()):
-                    if not (match := re_yahoo_symbol.fullmatch(symbol)):
+                if symbol := line[0].strip().upper():
+                    if not (match := re_asx_shares_symbol.fullmatch(symbol)):
                         _logger.error(f'symbol {symbol} invalid')
-                        continue
-                    if symbol not in self._symbols:
-                        self._symbols.append(match.group(1))
+                    elif symbol not in self._symbols:
+                        self._symbols.append(SharesAnnouncement(match.group(1), 0, None))
                     else:
                         _logger.error(f'Ignoring duplicate symbol {symbol} at line {csv_reader.line_num}')

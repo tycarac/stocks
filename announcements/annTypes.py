@@ -1,11 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, date, time
 from enum import Enum
-import logging
 from pathlib import Path
-
-
-_logger = logging.getLogger(__name__)
 
 
 # _____________________________________________________________________________
@@ -24,6 +20,16 @@ class Result(Enum):
     success = 'Success',
     warning = 'Warning',
     error = 'Error'
+
+
+# _____________________________________________________________________________
+@dataclass
+class SharesAnnouncement:
+    __slots__ = ['symbol', 'count', 'most_recent']
+
+    symbol: str
+    count: int
+    most_recent: datetime
 
 
 # _____________________________________________________________________________
