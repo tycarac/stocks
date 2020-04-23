@@ -32,20 +32,19 @@ def process_symbols(share_codes: List[typ.SharesAnnouncement], app_config: confi
     # Scrape list of announcements
     scraper = scrape.AnnPageScraper(app_config)
     announcements = scraper.get_announcements(share_codes)
+    output.output_shares_announcements(share_codes)
 
     # Fetch announcements
     fetcher = fetch.FetchFile(app_config)
     fetcher.process(announcements)
 
-    return announcements
-
-
-# _____________________________________________________________________________
-def process_cleanup(app_config: config.AppConfig) -> List[typ.Deleted]:
-    _logger.debug('process_cleanup')
-
     clean = cleanup.CleanOutput(app_config)
-    return clean.process()
+    deleted = clean.process()
+
+    output.output_announcements_summary(announcements, deleted)
+    output.write_report(announcements, deleted)
+
+    return announcements
 
 
 # _____________________________________________________________________________
@@ -69,14 +68,8 @@ def main():
         share_codes = load_symbols(Path(current_dp, args.file[0]))  # Expecting exactly 1 filename in list
         if args.symbols:
             output.output_symbols(share_codes)
-            return
-
-        announcements = process_symbols(share_codes, app_config)
-        deleted = process_cleanup(app_config)
-
-        output.output_shares_announcements(share_codes)
-        output.output_announcements_summary(announcements, deleted)
-        output.write_report(announcements, deleted)
+        else:
+            process_symbols(share_codes, app_config)
     except Exception as ex:
         _logger.exception('Catch all exception')
     finally:
