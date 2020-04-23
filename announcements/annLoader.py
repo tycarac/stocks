@@ -29,6 +29,7 @@ class ValuesLoader:
     def __read(self):
         def strip_csv(iterator):
             for ln in iterator:
+                # Skip lines with no content for start wth comment char '#'
                 if (ln := ln.strip()) and ln[0] != '#':
                     yield ln
 
@@ -36,11 +37,11 @@ class ValuesLoader:
             csv_reader = csv.reader(strip_csv(fp), quoting=csv.QUOTE_MINIMAL)
             next(csv_reader, None)  # skip csv header
 
-            for line in csv_reader:
-                if symbol := line[0].strip().upper():
-                    if not (match := re_asx_shares_symbol.fullmatch(symbol)):
-                        _logger.error(f'symbol {symbol} invalid')
-                    elif symbol not in self._symbols:
-                        self._symbols.append(SharesAnnouncement(match.group(1), 0, None))
-                    else:
-                        _logger.error(f'Ignoring duplicate symbol {symbol} at line {csv_reader.line_num}')
+            for row in csv_reader:
+                symbol = row[0].strip().upper()  # Assumes lines with no content have been filtered out
+                if not (match := re_asx_shares_symbol.fullmatch(symbol)):
+                    _logger.error(f'symbol {symbol} invalid')
+                elif symbol in self._symbols:
+                    _logger.error(f'Ignoring duplicate symbol {symbol} at line {csv_reader.line_num}')
+                else:
+                    self._symbols.append(SharesAnnouncement(match.group(1), 0, None))

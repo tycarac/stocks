@@ -67,7 +67,7 @@ def main():
         app_config = config.AppConfig(base_dp)
 
         share_codes = load_symbols(Path(current_dp, args.file[0]))  # Expecting exactly 1 filename in list
-        if args.symbols and share_codes:
+        if args.symbols:
             output.output_symbols(share_codes)
             return
 

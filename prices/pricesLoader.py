@@ -42,12 +42,19 @@ class ValuesLoader:
 
     # _____________________________________________________________________________
     def __read(self):
+        def strip_csv(iterator):
+            for ln in iterator:
+                # Skip lines with no content for start wth comment char '#'
+                if (ln := ln.strip()) and ln[0] != '#':
+                    yield ln
+
         with self._symbols_fp.open(mode='r', newline='') as fp:
-            csv_reader = csv.reader(filter(lambda r: r.strip() and r[0] != '#', fp), quoting=csv.QUOTE_MINIMAL)
+            csv_reader = csv.reader(strip_csv(fp), quoting=csv.QUOTE_MINIMAL)
             next(csv_reader, None)  # skip csv header
 
-            for line in csv_reader:
-                if line and (symbol := line[0].strip().upper()):
+            for row in csv_reader:
+                row = [r.strip() for r in row]
+                if len(row) > 0 and (symbol := row[0].upper()):
                     if not (match := re_yahoo_symbol.fullmatch(symbol)):
                         _logger.error(f'symbol {symbol} invalid')
                         continue
@@ -55,18 +62,18 @@ class ValuesLoader:
                         self._symbols.append(match.group(1))
                     else:
                         _logger.error(f'Ignoring duplicate symbol {symbol} at line {csv_reader.line_num}')
-                    if len(line) > 1 and (value := line[1].strip()):
+                    if len(row) > 1:
                         try:
-                            self._alert_lows[symbol] = Decimal(value).quantize(config.quant)
+                            self._alert_lows[symbol] = Decimal(row[1]).quantize(config.quant)
                         except InvalidOperation:
-                            _logger.error(f'symbol {symbol} has invalid low {value}')
-                    if len(line) > 2 and (value := line[2].strip()):
+                            _logger.error(f'symbol {symbol} has invalid low {row[1]}')
+                    if len(row) > 2:
                         try:
-                            self._alert_highs[symbol] = Decimal(value).quantize(config.quant)
+                            self._alert_highs[symbol] = Decimal(row[2]).quantize(config.quant)
                         except InvalidOperation:
-                            _logger.error(f'symbol {symbol} has invalid high {value}')
-                    if len(line) > 3 and (value := line[3].strip()):
+                            _logger.error(f'symbol {symbol} has invalid high {row[2]}')
+                    if len(row) > 3:
                         try:
-                            self._price_refs[symbol] = Decimal(value).quantize(config.quant)
+                            self._price_refs[symbol] = Decimal(row[3]).quantize(config.quant)
                         except InvalidOperation:
-                            _logger.error(f'symbol {symbol} has invalid reference {value}')
+                            _logger.error(f'symbol {symbol} has invalid reference {row[3]}')
