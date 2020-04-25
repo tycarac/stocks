@@ -62,18 +62,18 @@ class ValuesLoader:
                         self._symbols.append(match.group(1))
                     else:
                         _logger.error(f'Ignoring duplicate symbol {symbol} at line {csv_reader.line_num}')
-                    if len(row) > 1:
+                    if len(row) > 1 and (value := row[1]):
                         try:
-                            self._alert_lows[symbol] = Decimal(row[1]).quantize(config.quant)
+                            self._alert_lows[symbol] = Decimal(value).quantize(config.quant)
                         except InvalidOperation:
-                            _logger.error(f'symbol {symbol} has invalid low {row[1]}')
-                    if len(row) > 2:
+                            _logger.error(f'symbol {symbol} has invalid low {value}')
+                    if len(row) > 2 and (value := row[2]):
                         try:
-                            self._alert_highs[symbol] = Decimal(row[2]).quantize(config.quant)
+                            self._alert_highs[symbol] = Decimal(value).quantize(config.quant)
                         except InvalidOperation:
-                            _logger.error(f'symbol {symbol} has invalid high {row[2]}')
-                    if len(row) > 3:
+                            _logger.error(f'symbol {symbol} has invalid high {value}')
+                    if len(row) > 3 and (value := row[3]):
                         try:
-                            self._price_refs[symbol] = Decimal(row[3]).quantize(config.quant)
+                            self._price_refs[symbol] = Decimal(value).quantize(config.quant)
                         except InvalidOperation:
-                            _logger.error(f'symbol {symbol} has invalid reference {row[3]}')
+                            _logger.error(f'symbol {symbol} has invalid reference {value}')
