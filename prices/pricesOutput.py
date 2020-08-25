@@ -82,9 +82,11 @@ def output_symbols(values: ValuesLoader):
 
     with StringIO() as buf:
         buf.write(f'\n {"symbol":^6s} | {"low":^9s}   {"high":^9s}   {"ref":^9s}\n')
-        for s in values.symbols:
+        for i, s in enumerate(values.symbols, 1):
             buf.write(f' {_outsym(s)} | {_outp(values.alert_low(s))}   {_outp(values.alert_high(s))}'
                       f'   {_outp(values.price_ref(s))}\n')
+            if i % 4 == 0:
+                buf.write('\n')
         print(buf.getvalue())
 
 
@@ -96,9 +98,11 @@ def output_alerts(alerts: List[Alert]):
         return
     with StringIO() as buf:
         buf.write('\n')
-        for a in alerts:
+        for i, a in enumerate(alerts, 1):
             buf.write(f'ALERT {a.alertType.name.upper():<5s}: {a.symbol}  price {_outp(a.price)}  '
                       f'for {_outp(a.alertTrigger)}')
+            if i % 4 == 0:
+                buf.write('\n')
         print(buf.getvalue())
 
 
@@ -113,11 +117,12 @@ def output_prices(recs: List[Record], symbols: List[str] = None):
     with StringIO() as buf:
         buf.write(f'\n {"symbol":^6s} | {"price":^9s}   {"low":^9s}   {"high":^9s}   {"ask":^9s}   {"buy":^9s}'
                   f'  | {"volume":^9s}\n')
-
-        for r in recs:
+        for i, r in enumerate(recs, 1):
             prices = _fmtp([r.price, r.low, r.high, r.ask, r.bid], r.low)
             buf.write(f' {_outsym(r.symbol)} | {prices[0]}   {prices[1]}   {prices[2]}'
                       f'   {prices[3]}    {prices[4]} | {_outs(to_decimal_units(r.volume))}\n')
+            if i % 4 == 0:
+                buf.write('\n')
         print(buf.getvalue())
 
 
@@ -132,10 +137,11 @@ def output_brief(recs: List[Record]):
     with StringIO() as buf:
         buf.write(f'\n {"symbol":^6s} | {"price":^9s}   {"% ref":^9s}   {"ref":^9s} | {"L alert":^9s}'
                   f'   {"H alert":^9s}\n')
-
-        for r in recs:
+        for i, r in enumerate(recs, 1):
             buf.write(f' {_outsym(r.symbol)} | {_outp(r.price)}   {_outpercent(r.refToPrice)}   {_outp(r.ref)}'
                       f' | {_outp(r.alertLow)}   {_outp(r.alertHigh)}\n')
+            if i % 4 == 0:
+                buf.write('\n')
         print(buf.getvalue())
 
 
@@ -148,13 +154,13 @@ def write_json(data: Union[str, bytes], basename: str):
     try:
         data_json = json.loads(data.decode('utf-8') if isinstance(data, bytes) else data)
         data_fp.write_text(json.dumps(data_json, sort_keys=True, indent=2))
-    except (UnicodeError, OSError, json.JSONDecodeError):
-        path = data_fp.with_suffix('.raw.json')
-        _logger.exception(f'JSON parse error: {path.name}')
-        path.write_bytes(data)
     except PermissionError:
         _logger.error(f'Cannot write to "{data_fp.name}"')
         raise
+    except (json.JSONDecodeError, UnicodeError, OSError):
+        path = data_fp.with_suffix('.raw.json')
+        _logger.exception(f'JSON parse error: {path.name}')
+        path.write_bytes(data)
 
     return data_json
 
@@ -176,7 +182,7 @@ def write_alerts(alerts: List[Alert], basename: str):
 
         # Write alerts
         try:
-            with alert_fp.open(mode='w', newline='') as out:
+            with alert_fp.open(mode='wt', newline='') as out:
                 csv_writer = csv.writer(out, quoting=csv.QUOTE_MINIMAL)
                 csv_writer.writerow(Record.__slots__)
                 for alert in alerts:
@@ -212,7 +218,7 @@ def write_report(recs: List[Record], basename: str):
 
     # Write report
     try:
-        with report_fp.open(mode='w', newline='') as out:
+        with report_fp.open(mode='wt', newline='') as out:
             csv_writer = csv.writer(out, quoting=csv.QUOTE_MINIMAL)
             csv_writer.writerow(Record.__slots__)
             for rec in recs:

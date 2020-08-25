@@ -1,6 +1,8 @@
 beautifulsoup4
 lxml
+numpy
+pandas
+python-dateutil
 pytz
 tzlocal
-urllib3
-python-dateutil
+urllib3[brotli]
