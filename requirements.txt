@@ -5,4 +5,4 @@ pandas
 python-dateutil
 pytz
 tzlocal
-urllib3[brotli]
+urllib3

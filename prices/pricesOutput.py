@@ -17,6 +17,7 @@ _logger = logging.getLogger(__name__)
 _PRICE_FORMAT_THRESHOLD = Decimal(1.0)
 _PERCENT_FORMAT_THRESHOLD = Decimal(10.0)
 _BLANK = f'{"":9s}'
+_LINES_PER_BLOCK = 5
 
 _base_path = Path(Path(__file__).parent)
 _data_base_path = Path(_base_path, 'data')
@@ -85,7 +86,7 @@ def output_symbols(values: ValuesLoader):
         for i, s in enumerate(values.symbols, 1):
             buf.write(f' {_outsym(s)} | {_outp(values.alert_low(s))}   {_outp(values.alert_high(s))}'
                       f'   {_outp(values.price_ref(s))}\n')
-            if i % 4 == 0:
+            if i % _LINES_PER_BLOCK == 0:
                 buf.write('\n')
         print(buf.getvalue())
 
@@ -101,7 +102,7 @@ def output_alerts(alerts: List[Alert]):
         for i, a in enumerate(alerts, 1):
             buf.write(f'ALERT {a.alertType.name.upper():<5s}: {a.symbol}  price {_outp(a.price)}  '
                       f'for {_outp(a.alertTrigger)}')
-            if i % 4 == 0:
+            if i % _LINES_PER_BLOCK == 0:
                 buf.write('\n')
         print(buf.getvalue())
 
@@ -121,7 +122,7 @@ def output_prices(recs: List[Record], symbols: List[str] = None):
             prices = _fmtp([r.price, r.low, r.high, r.ask, r.bid], r.low)
             buf.write(f' {_outsym(r.symbol)} | {prices[0]}   {prices[1]}   {prices[2]}'
                       f'   {prices[3]}    {prices[4]} | {_outs(to_decimal_units(r.volume))}\n')
-            if i % 4 == 0:
+            if i % _LINES_PER_BLOCK == 0:
                 buf.write('\n')
         print(buf.getvalue())
 
@@ -140,7 +141,7 @@ def output_brief(recs: List[Record]):
         for i, r in enumerate(recs, 1):
             buf.write(f' {_outsym(r.symbol)} | {_outp(r.price)}   {_outpercent(r.refToPrice)}   {_outp(r.ref)}'
                       f' | {_outp(r.alertLow)}   {_outp(r.alertHigh)}\n')
-            if i % 4 == 0:
+            if i % _LINES_PER_BLOCK == 0:
                 buf.write('\n')
         print(buf.getvalue())
 
